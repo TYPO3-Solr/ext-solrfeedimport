@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>Language labels for database tables/fields belonging to extension 'solr_feedimport'</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="tx_solrfeedimport_feed">Feed</label>
+			<label index="tx_solrfeedimport_feed.url">URL</label>
+			<label index="tx_solrfeedimport_feed.description">Description</label>
+		</languageKey>
+	</data>
+</T3locallang>
