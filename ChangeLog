@@ -1,6 +1,7 @@
 2010-08-13  Ingo Renner  <ingo.renner@dkd.de>
 
 	* Added commits after deletion and indexing of feed items
+	* Fixed encoding of non-UTF-8 feeds to use the proper TYPO3 API
 
 2010-08-04  Markus Goldbach  <markus.goldbach@dkd.de>
 

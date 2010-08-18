@@ -35,7 +35,7 @@ require_once(t3lib_extMgm::extPath('solr_feedimport') . 'lib/magpierss/rss_fetch
 class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 
 	/**
-	 * itemtype of the indexed Solr document
+	 * Type of the indexed Solr document
 	 *
 	 * @var	string
 	 */
@@ -53,19 +53,18 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 	 * Main method to execute the scheduler task.
 	 *
 	 * @see	typo3/sysext/scheduler/tx_scheduler_Task::execute()
-	 * @return	boolean	If task succesful or not.
+	 * @return	boolean	True if the task executed without errors, false otherwise.
 	 */
 	public function execute() {
-		$feedsIndexed = array();
+		$indexedFeeds = array();
 		$previousSolrConnection = NULL;
 
 			//deactivate cache
 		define('MAGPIE_CACHE_ON', FALSE);
-		//TODO copy the magpie cache to typo3temp
+			//TODO copy the magpie cache to typo3temp
 		$feeds = $this->getFeeds();
 
 		foreach ($feeds as $feed) {
-			$successFullyIndexed = FALSE;
 			$this->solr = $this->getSolrConnectionByFeed($feed);
 
 			if ($previousSolrConnection != $this->solr) {
@@ -75,16 +74,13 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 				$this->solr->commit();
 			}
 
-			$successFullyIndexed        = $this->indexFeed($feed);
-			$feedsIndexed[$feed['uid']] = $successFullyIndexed;
+			$indexedFeeds[$feed['uid']] = $this->indexFeed($feed);
 			$this->solr->commit();
 
-			$previousSolrConnection     = $this->solr;
+			$previousSolrConnection = $this->solr;
 		}
 
-
-
-		return $this->feedsIndexedSuccessfully($feedsIndexed);
+		return $this->feedsIndexedSuccessfully($indexedFeeds);
 	}
 
 	/**
@@ -108,13 +104,11 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 	}
 
 	/**
-	 * Get all active Feeds from database
+	 * Get all active feeds from database
 	 *
 	 * @return	array	All active feeds
 	 */
 	protected function getFeeds() {
-			// TODO Load feed URls from DB
-			// FIXME Use db function to check id delete and not hidden
 		$feeds = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'*',
 			'tx_solrfeedimport_feed',
@@ -125,12 +119,14 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 	}
 
 	/**
-	 * Index the content of a feed record into a solrcore
+	 * Index the content of a single feed
 	 *
 	 * @param	array	A feed record
 	 * @return	boolean	status of indexing
 	 */
 	protected function indexFeed(array $feedRecord) {
+		$indexed = FALSE;
+
 		try {
 			$solrDocuments = array();
 
@@ -143,29 +139,29 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 
 			$response = $this->solr->addDocuments($solrDocuments);
 			if ($response->getHttpStatus() == 200) {
-				$successFullIndexed = TRUE;
+				$indexed = TRUE;
 			}
 		} catch (Exception $e) {
 				// TODO logging
 			continue;
 		}
 
-		return $successFullIndexed;
+		return $indexed;
 	}
 
 	/**
-	 * Transform a feed item to a solr document
+	 * Transforms a feed item into a Solr document
 	 *
-	 * @param	array	feed record of the feed item
-	 * @param	array	the feed element which you want to index
-	 * @param	integer	iterator number of feed element
-	 * @param	string	encodeing of feed
+	 * @param	array	Feed record of the feed item
+	 * @param	array	The feed element which you want to index
+	 * @param	integer	Iterator number of feed element
+	 * @param	string	Encodeing of feed
 	 * @return	Apache_Solr_Document a solr document
 	 */
 	protected function feedItemToDocument(array $feed, array $feedItem, $itemIndex, $feedEncoding) {
 		$document = t3lib_div::makeInstance('Apache_Solr_Document');
 
-			//field mapping
+			// field mapping
 		$document->addField('type',     self::ITEM_TYPE);
 		$document->addField('appKey',   'EXT:solr_feedimport');
 		$document->addField('id',       tx_solr_Util::getDocumentId(
@@ -175,8 +171,8 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 			self::ITEM_TYPE
 		));
 		$document->addField('siteHash', tx_solr_Util::getSiteHash($feed['pid']));
-		$document->addField('title',    ($feedEncoding == 'UTF-8') ? $feedItem['title'] : utf8_encode($feedItem['title']));
-		$document->addField('content',  ($feedEncoding == 'UTF-8') ? strip_tags($feedItem['description']) : utf8_encode(strip_tags($feedItem['description'])));
+		$document->addField('title',    $this->getUtf8EncodedString($feedItem['title'], $feedEncoding));
+		$document->addField('content',  $this->getUtf8EncodedString($feedItem['description'], $feedEncoding));
 		$document->addField('url',      $this->getLink($feedItem));
 		$document->addField('language', $feed['sys_language_uid']);
 
@@ -184,17 +180,41 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 	}
 
 	/**
-	 * Looks if all feed items are indexed
+	 * Returns an utf-8 encoded string. If the string is not utf-8 encoded yet,
+	 * it is converted to utf-8.
 	 *
-	 * @param	array of all solr responses
-	 * @return	boolean	the status over all indexed items
+	 * @param	string	String to be checked and converted on demand.
+	 * @param	string	Encoding of the string.
+	 * @return	string	Utf-8 encoded string.
+	 */
+	protected function getUtf8EncodedString($string, $encoding) {
+		$utf8Aliases = array('utf-8', 'utf8', 'UTF-8', 'UTF8');
+		$utf8EncodedString = '';
+
+		static $charsetConverter;
+		$charsetConverter = t3lib_div::makeInstance('t3lib_cs');
+
+		if (in_array($encoding, $utf8Aliases)) {
+			$utf8EncodedString = $string;
+		} else {
+			$utf8EncodedString = $charsetConverter->utf8_encode($string, $encoding);
+		}
+
+		return $utf8EncodedString;
+	}
+
+	/**
+	 * Checks if all feed items have been indexed
+	 *
+	 * @param	array	Array of all Solr responses
+	 * @return	boolean	Over all status of all indexed items
 	 */
 	protected function feedsIndexedSuccessfully(array $feedIndexedStatuses) {
-		$success = TRUE;
+		$indexed = TRUE;
 
 		foreach ($feedIndexedStatuses as $feedUid => $feedIndexedStatus) {
 			if (!$feedIndexedStatus) {
-				$success = FALSE;
+				$indexed = FALSE;
 
 					// TODO might throw an exception explaining which feed failed
 
@@ -202,18 +222,18 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 			}
 		}
 
-		return $success;
+		return $indexed;
 	}
 
 	/**
-	 * Get the link for the feed item, because MAGPIERSS use link_ oder link
-	 * when parse feeds
+	 * Gets the link for the feed item.
+	 * MAGPIERSS uses link_ or link index when parsing feeds
 	 *
-	 * @param	array A feed item from which you want the link
+	 * @param	array	A feed item from which you want the link
 	 * @return	string	The link of a feed item
 	 */
 	protected function getLink(array $feedItem) {
-			//MAGPIERSS use link_ oder link when parse feeds
+
 		if (isset($feedItem['link'])) {
 			$feedLink = $feedItem['link'];
 		} else {
@@ -229,4 +249,5 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/solr_feedimport/scheduler/class.tx_solrfeedimport_scheduler_indextask.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/solr_feedimport/scheduler/class.tx_solrfeedimport_scheduler_indextask.php']);
 }
+
 ?>
