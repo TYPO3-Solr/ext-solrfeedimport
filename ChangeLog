@@ -2,25 +2,25 @@
 
 	* Added commits after deletion and indexing of feed items
 
-10-08-04 Markus Goldbach <markus.goldbach@dkd.de>
+2010-08-04  Markus Goldbach  <markus.goldbach@dkd.de>
 
 	* Added Documentation
 
-10-07-28 Markus Goldbach <markus.goldbach@dkd.de>
+2010-07-28  Markus Goldbach  <markus.goldbach@dkd.de>
 
-	* fixing bugs after extension cleanup
-	* check if the Feed is UTF-8 to encode ISO-8859-1
+	* Fixed bugs after extension cleanup
+	* Added a check if the feed is UTF-8
 
-10-07-27 Makrus Goldbach  <markus.goldbach@dkd.de>
+2010-07-27  Makrus Goldbach  <markus.goldbach@dkd.de>
 
 	* Added language support for rss items
 	* Added language support for solr import
 	* Changed Extensionstatus from alpha to beta
 
-10-07-14 Markus Goldbach  <markus.goldbach@dkd.de>
+2010-07-14  Markus Goldbach  <markus.goldbach@dkd.de>
 
 	* Added a function to remove all rss items to solr before index them
 
-10-07-13 Markus Goldbach  <markus.goldbach@dkd.de>
+2010-07-13  Markus Goldbach  <markus.goldbach@dkd.de>
 
-	* Initial release
+	* Initial import
