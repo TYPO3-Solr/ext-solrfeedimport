@@ -72,13 +72,17 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 					// clean old index documents, we need to do a full import,
 					// incremental imports don't work due to missing identifiers
 				$this->solr->deleteByType(self::ITEM_TYPE);
+				$this->solr->commit();
 			}
 
 			$successFullyIndexed        = $this->indexFeed($feed);
 			$feedsIndexed[$feed['uid']] = $successFullyIndexed;
+			$this->solr->commit();
 
 			$previousSolrConnection     = $this->solr;
 		}
+
+
 
 		return $this->feedsIndexedSuccessfully($feedsIndexed);
 	}
