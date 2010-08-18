@@ -167,8 +167,7 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 		$document->addField('id',       tx_solr_Util::getDocumentId(
 			'tx_solrfeedimport_feed',
 			$feed['pid'],
-			$feed['uid'] . '_' . $itemIndex,
-			self::ITEM_TYPE
+			$feed['uid'] . '_' . $itemIndex
 		));
 		$document->addField('siteHash', tx_solr_Util::getSiteHash($feed['pid']));
 		$document->addField('title',    $this->getUtf8EncodedString($feedItem['title'], $feedEncoding));
