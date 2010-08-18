@@ -170,8 +170,10 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 			$feed['uid'] . '_' . $itemIndex
 		));
 		$document->addField('siteHash', tx_solr_Util::getSiteHash($feed['pid']));
-		$document->addField('title',    $this->getUtf8EncodedString($feedItem['title'], $feedEncoding));
-		$document->addField('content',  $this->getUtf8EncodedString($feedItem['description'], $feedEncoding));
+#		$document->addField('title',    $this->getUtf8EncodedString($feedItem['title'], $feedEncoding));
+#		$document->addField('content',  $this->getUtf8EncodedString(strip_tags($feedItem['description']), $feedEncoding));
+		$document->addField('title',    ($feedEncoding == 'UTF-8') ? $feedItem['title'] : utf8_encode($feedItem['title']));
+		$document->addField('content',  ($feedEncoding == 'UTF-8') ? strip_tags($feedItem['description']) : utf8_encode(strip_tags($feedItem['description'])));
 		$document->addField('url',      $this->getLink($feedItem));
 		$document->addField('group',    '0');
 		$document->addField('language', $feed['sys_language_uid']);
@@ -191,7 +193,6 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 		$utf8Aliases = array('utf-8', 'utf8', 'UTF-8', 'UTF8');
 		$utf8EncodedString = '';
 
-		static $charsetConverter;
 		$charsetConverter = t3lib_div::makeInstance('t3lib_cs');
 
 		if (in_array($encoding, $utf8Aliases)) {
