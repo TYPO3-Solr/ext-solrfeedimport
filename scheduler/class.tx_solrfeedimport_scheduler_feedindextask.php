@@ -173,6 +173,7 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 		$document->addField('title',    $this->getUtf8EncodedString($feedItem['title'], $feedEncoding));
 		$document->addField('content',  $this->getUtf8EncodedString($feedItem['description'], $feedEncoding));
 		$document->addField('url',      $this->getLink($feedItem));
+		$document->addField('group',    '0');
 		$document->addField('language', $feed['sys_language_uid']);
 
 		return $document;
