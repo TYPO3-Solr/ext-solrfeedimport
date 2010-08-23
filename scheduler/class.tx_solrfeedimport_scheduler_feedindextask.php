@@ -189,16 +189,16 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 	 * @param	string	Encoding of the string.
 	 * @return	string	Utf-8 encoded string.
 	 */
-	protected function getUtf8EncodedString($string, $encoding) {
+	protected function getUtf8EncodedString($string, $sourceEncoding) {
 		$utf8Aliases = array('utf-8', 'utf8', 'UTF-8', 'UTF8');
 		$utf8EncodedString = '';
 
 		$charsetConverter = t3lib_div::makeInstance('t3lib_cs');
 
-		if (in_array($encoding, $utf8Aliases)) {
+		if (in_array($sourceEncoding, $utf8Aliases)) {
 			$utf8EncodedString = $string;
 		} else {
-			$utf8EncodedString = $charsetConverter->utf8_encode($string, $encoding);
+			$utf8EncodedString = $charsetConverter->utf8_encode($string, $sourceEncoding);
 		}
 
 		return $utf8EncodedString;
