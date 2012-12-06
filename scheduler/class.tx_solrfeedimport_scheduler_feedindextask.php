@@ -60,7 +60,7 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 		$previousSolrConnection = NULL;
 
 			//deactivate cache
-		define('MAGPIE_CACHE_ON', FALSE);
+		define('MAGPIE_CACHE_ON', TRUE);
 			//TODO copy the magpie cache to typo3temp
 		$feeds = $this->getFeeds();
 
@@ -132,14 +132,16 @@ class tx_solrfeedimport_scheduler_FeedIndexTask extends tx_scheduler_Task {
 
 			$feedContent = fetch_rss($feedRecord['url']);
 			$itemIndex   = 0;
-			foreach ($feedContent->items as $item) {
-				$solrDocuments[] = $this->feedItemToDocument($feedRecord, $item, $itemIndex, $feedContent->encoding);
-				$itemIndex++;
-			}
+			if($feedContent->items) {
+				foreach ($feedContent->items as $item) {
+					$solrDocuments[] = $this->feedItemToDocument($feedRecord, $item, $itemIndex, $feedContent->encoding);
+					$itemIndex++;
+				}
 
-			$response = $this->solr->addDocuments($solrDocuments);
-			if ($response->getHttpStatus() == 200) {
-				$indexed = TRUE;
+				$response = $this->solr->addDocuments($solrDocuments);
+				if ($response->getHttpStatus() == 200) {
+					$indexed = TRUE;
+				}
 			}
 		} catch (Exception $e) {
 				// TODO logging
